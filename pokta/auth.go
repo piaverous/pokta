@@ -3,6 +3,7 @@ package pokta
 import (
 	b64 "encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -73,7 +74,6 @@ func (app *App) AuthenticatePKJWT(signOnly bool) (string, error) {
 		return selfSignedToken, err
 	}
 
-	// Parse HTTP Response
 	var parsedResponse types.OktaAuthResponse
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
@@ -81,6 +81,11 @@ func (app *App) AuthenticatePKJWT(signOnly bool) (string, error) {
 		return selfSignedToken, err
 	}
 
+	if resp.StatusCode >= 400 {
+		return selfSignedToken, fmt.Errorf("HTTP %d while getting token from Okta: %s", resp.StatusCode, body)
+	}
+
+	// Parse HTTP Response
 	if err := json.Unmarshal(body, &parsedResponse); err != nil {
 		return selfSignedToken, err
 	}
